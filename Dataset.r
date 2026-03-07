@@ -23,11 +23,14 @@ library(writexl)
 data("penguins")
 df <- penguins
 
+write_xlsx(df, "DTS_204_Dataset.xlsx")
+
 # Display the first six rows
 cat("--- First Six Rows ---\n")
 head(df)
 
-#  Check for missing values
+# Check Missing Values: We create a clean dataset by dropping rows with NAs 
+# This ensures our regression and correlation models run flawlessly.
 cat("\n--- Missing Values Count ---\n")
 colSums(is.na(df))
 
@@ -44,4 +47,61 @@ adelie_mass <- df %>% filter(species == "Adelie") %>% pull(body_mass_g)
 gentoo_mass <- df %>% filter(species == "Gentoo") %>% pull(body_mass_g)
 t_test_result <- t.test(adelie_mass, gentoo_mass)
 cat("\n--- Two-Sample t-Test Result ---\n")
-print(t_test_result)  # Displays t-test results, p-value, confidence interval 
+print(t_test_result)  # Displays t-test results, p-value, confidence interval
+
+# ii. One-sample proportion test (male proportion vs 50%)
+male_count <- sum(df$sex == "male", na.rm = TRUE) 
+total_count <- sum(!is.na(df$sex)) 
+prop_test_result <- prop.test(male_count, total_count, p = 0.5)
+prop_test_result  # Displays proportion test results
+
+# ========================
+# Correlation Analysis
+# ========================
+# Compute correlation matrix
+num_vars <- select(df, bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g)
+cor_matrix <- cor(num_vars, use = "complete.obs")
+cat("\n--- Correlation Matrix ---\n")
+cor_matrix
+
+# Visualize correlation matrix 
+corrplot(cor_matrix, method = "color", addCoef.col = "black", number.cex = 0.8)
+
+# ========================
+# Regression Analysis
+# ========================
+# i. Simple Linear Regression
+simple_lm <- lm(body_mass_g ~ flipper_length_mm, data = df)
+cat("\n--- Simple Linear Regression Summary ---\n")
+summary(simple_lm)
+
+# ii. Multiple linear regression
+multi_lm <- lm(body_mass_g ~ flipper_length_mm + bill_length_mm + bill_depth_mm, data = df)
+cat("\n--- Multiple Linear Regression Summary ---\n")
+summary(multi_lm)
+
+# ========================
+# Data Visualization
+# ========================
+# 1. Scatter plot: Body Mass vs Flipper Length
+ggplot(df, aes(x = flipper_length_mm, y = body_mass_g)) + 
+  geom_point(aes(color = species)) + 
+  geom_smooth(method = "lm", se = TRUE) + 
+  theme_minimal() + 
+  labs(title = "Body Mass vs Flipper Length", x = "Flipper Length (mm)", y = "Body Mass (g)")
+
+# 2. Boxplot: Body Mass by Species
+ggplot(df, aes(x = species, y = body_mass_g, fill = species)) + 
+  geom_boxplot() + 
+  theme_minimal() + 
+  labs(title = "Body Mass by Species", x = "Species", y = "Body Mass (g)")
+
+
+# 3. Histogram with normal curve overlay
+ggplot(df, aes(x = body_mass_g)) + 
+  geom_histogram(aes(y = ..density..), binwidth = 200, fill = "lightblue", color = "black") +
+  stat_function(fun = dnorm, args = list(mean = mean(df$body_mass_g, na.rm = TRUE),
+                                         sd = sd(df$body_mass_g, na.rm = TRUE)),
+                color = "red", size = 1) +
+  theme_minimal() +
+  labs(title = "Histogram of Body Mass with Normal Curve", x = "Body Mass (g)", y = "Density")
