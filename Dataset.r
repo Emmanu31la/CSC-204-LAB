@@ -23,6 +23,9 @@ library(writexl)
 data("penguins")
 df <- penguins
 
+#Globally omit NA values to prevent ggplot2 warnings and match the report's methodology
+df <- na.omit(df)
+
 write_xlsx(df, "DTS_204_Dataset.xlsx")
 
 # Display the first six rows
@@ -99,9 +102,9 @@ ggplot(df, aes(x = species, y = body_mass_g, fill = species)) +
 
 # 3. Histogram with normal curve overlay
 ggplot(df, aes(x = body_mass_g)) + 
-  geom_histogram(aes(y = ..density..), binwidth = 200, fill = "lightblue", color = "black") +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 200, fill = "lightblue", color = "black") +
   stat_function(fun = dnorm, args = list(mean = mean(df$body_mass_g, na.rm = TRUE),
                                          sd = sd(df$body_mass_g, na.rm = TRUE)),
-                color = "red", size = 1) +
+                color = "red", linewidth = 1) +
   theme_minimal() +
   labs(title = "Histogram of Body Mass with Normal Curve", x = "Body Mass (g)", y = "Density")
